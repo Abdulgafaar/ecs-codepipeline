@@ -1,0 +1,70 @@
+# installing java to base docker from amazon
+#https://github.com/aws/aws-codebuild-docker-images/blob/master/ubuntu/java/openjdk-8/Dockerfile
+#https://github.com/aws/aws-codebuild-docker-images/blob/master/ubuntu/docker/1.12.1/Dockerfile
+version: 0.2
+
+  #env:
+  #  variables:
+  #    GRADLE_VERSION: "4.3"
+  #    JAVA_HOME: "/usr/lib/jvm/java-8-openjdk-amd64"
+  #    AWS_ACCOUNT_ID : "001393350085"
+  #    IMAGE_REPO_NAME : "etzmiddleware"
+  #    IMAGE_TAG : "latest"
+  #parameter-store:
+  # key: "value"
+# key: "value"
+
+phases:
+  install:
+    runtime-versions:
+      java: corretto8
+    #      docker: 18
+    commands:
+    #- apt-get update
+    #- apt-get install -y software-properties-common
+    #- add-apt-repository ppa:openjdk-r/ppa
+    #- apt-get update
+    #- apt-get -y install python-setuptools
+    #- apt-get -y install openjdk-$JAVA_VERSION-jdk
+    #- apt-get clean
+    #- update-ca-certificates -f
+    #- mkdir -p /usr/src/gradle
+    #- wget "https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip" -O /usr/src/gradle/gradle-$GRADLE_VERSION-bin.zip
+    #- unzip /usr/src/gradle/gradle-$GRADLE_VERSION-bin.zip -d /usr/local
+    #- ln -s /usr/local/gradle-$GRADLE_VERSION/bin/gradle /usr/bin/gradle
+    #- rm -rf /usr/src/gradle
+    #- rm -fr /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    # - command
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - eval $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
+      # - command
+      # - command
+  build:
+    commands:
+      - echo Build started on `date`
+      - printenv
+      - docker --version
+      - gradle --version
+      - gradle buildDocker
+      - docker images -a
+      - echo Building the Docker image...
+      #      - docker tag etzmiddleware:latest $AWS_ACCOUNT_ID.dkr.ecr.eu-west-1.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+      - docker tag etzmiddleware:latest 001393350085.dkr.ecr.eu-west-1.amazonaws.com/etzmiddleware:latest
+      - docker images -a
+
+      # - command
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      #      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+      - docker push 001393350085.dkr.ecr.eu-west-1.amazonaws.com/etzmiddleware:latest
+      - echo Writing image definitions file...
+      - printf '[{"name":"etzmiddleware","imageUri":"%s"}]' $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG > imagedefinitions.json
+artifacts:
+  files:
+    - build/libs/etzmiddleware.jar
+    - imagedefinitions.json
+
